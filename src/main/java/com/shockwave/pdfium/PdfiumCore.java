@@ -23,10 +23,9 @@ public class PdfiumCore {
 
     static {
         try {
-            System.loadLibrary("c++_shared");
-            System.loadLibrary("modpng");
-            System.loadLibrary("modft2");
-            System.loadLibrary("modpdfium");
+            // Load the new consolidated pdfium library (16KB page-size safe)
+            System.loadLibrary("pdfium");
+            // Load our JNI bridge that connects Java calls to pdfium
             System.loadLibrary("jniPdfium");
         } catch (UnsatisfiedLinkError e) {
             Log.e(TAG, "Native libraries failed to load - " + e);

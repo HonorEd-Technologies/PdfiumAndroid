@@ -3,24 +3,30 @@ buildscript {
         google()
         mavenCentral()
     }
-
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.0'
+        classpath 'com.android.tools.build:gradle:8.5.2'
     }
 }
 
 apply plugin: 'com.android.library'
+apply plugin: 'maven-publish'
 
 android {
-    compileSdkVersion 31
+    namespace "com.shockwave.pdfium"
+    compileSdk 34
 
     defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 31
+        minSdk 21  // Updated from 19 to support modern NDK for 16KB pages
+        targetSdk 34
         versionCode 1
-        versionName "1.9.2"
+        versionName "1.9.3-16kb"  // Updated version to indicate 16KB support
         buildConfigField 'String', 'VERSION_NAME', "\"${defaultConfig.versionName}\""
     }
+
+    buildFeatures {
+        buildConfig true
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -28,10 +34,31 @@ android {
         }
     }
 
+    // Ensure Java 8 bytecode for Android consumers
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    // Add NDK build to compile JNI bridge with new pdfium library
+    externalNativeBuild {
+        ndkBuild {
+            path 'src/main/jni/Android.mk'
+        }
+    }
+
     sourceSets{
         main {
-            jni.srcDirs = []
-            jniLibs.srcDir 'src/main/libs'
+            // Use modern jniLibs approach for prebuilt .so files
+            jniLibs.srcDirs = ['src/main/jniLibs']
+        }
+    }
+
+    // JitPack publishing configuration
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
         }
     }
 }
@@ -45,11 +72,36 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
 
-// Maven Publishing
-ext {
-    PUBLISH_GROUP_ID = 'com.github.mhiew'
-    PUBLISH_VERSION = "1.9.2"
-    PUBLISH_ARTIFACT_ID = 'pdfium-android'
-}
+// JitPack publishing configuration
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
 
-apply from: "${rootProject.projectDir}/publish-mavencentral.gradle"
+                groupId = 'education.honor'  // Replace with your GitHub username
+                artifactId = 'pdfium-android-16kb'
+                version = android.defaultConfig.versionName
+
+                pom {
+                    name = 'PdfiumAndroid 16KB'
+                    description = 'Android PDF renderer with 16KB page size support'
+                    url = 'https://github.com/HonorEd-Technologies/PdfiumAndroid'  // Replace with your repo URL
+
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+
+                    scm {
+                        connection = 'scm:git:git@github.com:HonorEd-Technologies/PdfiumAndroid.git'
+                        developerConnection = 'scm:git:ssh://github.com:HonorEd-Technologies/PdfiumAndroid.git'
+                        url = 'https://github.com/HonorEd-Technologies/PdfiumAndroid'
+                    }
+                }
+            }
+        }
+    }
+}
