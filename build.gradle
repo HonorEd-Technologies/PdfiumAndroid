@@ -21,6 +21,17 @@ android {
         versionCode 1
         versionName "1.9.3-16kb"  // Updated version to indicate 16KB support
         buildConfigField 'String', 'VERSION_NAME', "\"${defaultConfig.versionName}\""
+
+        // Explicitly filter ABIs for both packaging and NDK builds
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a'
+        }
+
+        externalNativeBuild {
+            ndkBuild {
+                abiFilters 'arm64-v8a', 'armeabi-v7a'
+            }
+        }
     }
 
     buildFeatures {
@@ -40,10 +51,11 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    // Add NDK build to compile JNI bridge with new pdfium library
+    // Add NDK build to compile JNI bridge with new pdfium library (ARM only)
     externalNativeBuild {
         ndkBuild {
             path 'src/main/jni/Android.mk'
+            buildStagingDirectory 'build/ndk-build'
         }
     }
 
